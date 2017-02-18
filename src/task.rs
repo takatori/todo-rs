@@ -10,7 +10,7 @@ mod schema {
 }
 
 #[table_name = "tasks"]
-#[derive(Serialize, Queryable, Insertable, FromForm, Debug, Clone)]
+#[derive(Serialize, Desirialize, Queryable, Insertable, FromForm, Debug, Clone)]
 pub struct Task {
     id: Option<i32>,
     pub description: String,
