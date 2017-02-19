@@ -11,7 +11,7 @@ if ! command -v diesel > /dev/null 2>&1; then
 fi
 
 # create db/db.sql
-diesel migration --dadtabase-url=$DATABASE_URL run > /dev/null
+diesel migration --database-url=$DATABASE_URL run > /dev/null
 popd > /dev/null
 
 echo "export DATABASE_URL"=$DATABASE_URL
