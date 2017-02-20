@@ -6,15 +6,16 @@ use self::schema::tasks;
 use self::schema::tasks::dsl::{task as all_tasks, completed as task_completed};
 
 mod schema {
-    infer_schema!("env:DATABASE_URL");
+    infer_schema!("/Users/takatorisatoshi/Desktop/playground/todo-rs/db/db.sql");
 }
 
 #[table_name = "tasks"]
-#[derive(Serialize, Desirialize, Queryable, Insertable, FromForm, Debug, Clone)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, FromForm, Debug, Clone)]
+
 pub struct Task {
     id: Option<i32>,
     pub description: String,
-    pub completed: Option<bool>
+    pub completed: Option<bool>,
 }
 
 impl Task {

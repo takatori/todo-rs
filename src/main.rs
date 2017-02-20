@@ -4,9 +4,14 @@
 
 extern crate rocket;
 extern crate serde_json;
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
-#[macro_use] extern crate serde_derive;
+
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
 extern crate rocket_contrib;
 extern crate r2d2;
 extern crate r2d2_diesel;
@@ -20,18 +25,25 @@ use rocket_contrib::JSON;
 
 use task::Task;
 
-
-#[derive(Debug, Serialize, Desirialize)]
-struct Context<'a, 'b>{ msg: Option<(&'a str, &'b str)>, tasks: Vec<Task> }
+#[derive(Debug, Serialize, Deserialize)]
+struct Context<'a, 'b> {
+    msg: Option<(&'a str, &'b str)>,
+    tasks: Vec<Task>,
+}
 
 impl<'a, 'b> Context<'a, 'b> {
-    
     pub fn err(conn: &db::Conn, msg: &'a str) -> Context<'static, 'a> {
-        Context{ msg: Some(("error", msg)), task: Task::all(conn) }
+        Context {
+            msg: Some(("error", msg)),
+            task: Task::all(conn),
+        }
     }
 
     pub fn raw(conn: &db::Conn, msg: Option<(&'a str, &'b str)>) -> Context<'a, 'b> {
-        Context{ msg: msg, tasks: Task::all(conn) }
+        Context {
+            msg: msg,
+            tasks: Task::all(conn),
+        }
     }
 }
 
@@ -39,8 +51,8 @@ impl<'a, 'b> Context<'a, 'b> {
 fn new(task: JSON<Task>, conn: db::Conn) -> Flash<Redirect> {
 
     // consumes the JSON wrapper and returns the wrapped item.
-    let todo = task.into_inner(); 
-    
+    let todo = task.into_inner();
+
     if todo.description.is_empty() {
         Flash::error(Redirect::to("/"), "Description cannot be empty.")
     } else if todo.insert(&conn) {
@@ -64,7 +76,7 @@ fn delete(id: i32, conn: db::Conn) -> Result<Flash<Redirect>, JSON> {
     if Task::delete_with_id(id, &conn) {
         Ok(Flash::success(Redirect::to("/"), "Todo was deleted."))
     } else {
-        Err(JSON(&Context::err(&conn, "Couldn't delete task.")))            
+        Err(JSON(&Context::err(&conn, "Couldn't delete task.")))
     }
 }
 
