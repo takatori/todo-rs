@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::env;
 
 use r2d2;
 use diesel::sqlite::SqliteConnection;
@@ -10,7 +11,7 @@ use rocket::{Request, State, Outcome};
 
 pub type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
-pub const DATABASE_FILE: &'static str = env!("DATABASE_URL");
+pub const DATABASE_FILE: &'static str = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
 pub fn init_pool() -> Pool {
     let config = r2d2::Config::default();

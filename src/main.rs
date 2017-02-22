@@ -4,6 +4,7 @@
 
 extern crate rocket;
 extern crate serde_json;
+extern crate dotenv;
 
 #[macro_use]
 extern crate diesel;
@@ -22,6 +23,8 @@ mod db;
 use rocket::request::{Form, FlashMessage};
 use rocket::response::{Flash, Redirect};
 use rocket_contrib::JSON;
+use dotenv::dotenv;
+
 
 use task::Task;
 
@@ -90,6 +93,7 @@ fn index(msg: Option<FlashMessage>, conn: db::Conn) -> JSON {
 
 
 fn main() {
+    dotenv().ok();
     rocket::ignite()
         .manage(db::init_pool())
         .mount("/", routes![index, static_files::all])
