@@ -1,9 +1,9 @@
 use std::ops::Deref;
-use std::env;
 
 use r2d2;
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;
+
 
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
@@ -11,12 +11,12 @@ use rocket::{Request, State, Outcome};
 
 pub type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
-pub const DATABASE_FILE: &'static str = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+pub const DATABASE_FILE: &'static str = env!("DATABASE_URL");
 
 pub fn init_pool() -> Pool {
     let config = r2d2::Config::default();
     let manager = ConnectionManager::<SqliteConnection>::new(DATABASE_FILE);
-    r2d2::Pool::new(config, manager).expect("db pool") // Unwraps a result, yielding the content of an Ok.
+    r2d2::Pool::new(config, manager).unwrap() // Unwraps a result, yielding the content of an Ok.
 }
 
 pub struct Conn(r2d2::PooledConnection<ConnectionManager<SqliteConnection>>);
@@ -35,15 +35,16 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Conn, ()> {
-        let pool = match <State<Pool> as FromRequest>::from_request(request) {
-            Outcome::Success(pool) => pool,
-            Outcome::Failure(e) => return Outcome::Failure(e),
-            Outcome::Forward(_) => return Outcome::Forward(()),
-        };
+        let pool =
+            match <State<Pool> as FromRequest>::from_request(request) {
+                Outcome::Success(pool) => pool,
+                Outcome::Failure(e) => return Outcome::Failure(e),
+                Outcome::Forward(_) => return Outcome::Forward(()),
+            };
 
         match pool.get() {
-            Ok(conn) => Outcome::Success(Connn(conn)),
-            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ()))
+            Ok(conn) => Outcome::Success(Conn(conn)),
+            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ())),
         }
     }
 }

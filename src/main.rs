@@ -3,7 +3,10 @@
 #![plugin(rocket_codegen)]
 
 extern crate rocket;
+extern crate rocket_contrib;
 extern crate serde_json;
+extern crate r2d2;
+extern crate r2d2_diesel;
 extern crate dotenv;
 
 #[macro_use]
@@ -12,15 +15,13 @@ extern crate diesel;
 extern crate diesel_codegen;
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate rocket_contrib;
-extern crate r2d2;
-extern crate r2d2_diesel;
+
+
+
 
 mod task;
 mod db;
 
-use rocket::request::{Form, FlashMessage};
 use rocket::response::{Flash, Redirect};
 use rocket_contrib::JSON;
 use dotenv::dotenv;
@@ -28,29 +29,7 @@ use dotenv::dotenv;
 
 use task::Task;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Context<'a, 'b> {
-    msg: Option<(&'a str, &'b str)>,
-    tasks: Vec<Task>,
-}
-
-impl<'a, 'b> Context<'a, 'b> {
-    pub fn err(conn: &db::Conn, msg: &'a str) -> Context<'static, 'a> {
-        Context {
-            msg: Some(("error", msg)),
-            task: Task::all(conn),
-        }
-    }
-
-    pub fn raw(conn: &db::Conn, msg: Option<(&'a str, &'b str)>) -> Context<'a, 'b> {
-        Context {
-            msg: msg,
-            tasks: Task::all(conn),
-        }
-    }
-}
-
-#[post("/", data = "<task>")]
+#[post("/todos", data = "<task>")]
 fn new(task: JSON<Task>, conn: db::Conn) -> Flash<Redirect> {
 
     // consumes the JSON wrapper and returns the wrapped item.
@@ -65,38 +44,41 @@ fn new(task: JSON<Task>, conn: db::Conn) -> Flash<Redirect> {
     }
 }
 
-#[put("/<id>")]
-fn toggle(id: i32, conn: db::Conn) -> Result<Redirect, JSON> {
+#[put("/todos/<id>")]
+fn toggle(id: i32, conn: db::Conn) -> JSON<&'static str> {
+
     if Task::toggle_with_id(id, &conn) {
-        Ok(Redirect::to("/"))
+        JSON("Toggled")
     } else {
-        Err(JSON(&Context::err(&conn, "Couldn't toggle task.")))
+        JSON("Couldn't toggle task.")
     }
 }
 
-#[delete("/<id>")]
-fn delete(id: i32, conn: db::Conn) -> Result<Flash<Redirect>, JSON> {
+#[delete("/todos/<id>")]
+fn delete(id: i32, conn: db::Conn) -> JSON<&'static str> {
     if Task::delete_with_id(id, &conn) {
-        Ok(Flash::success(Redirect::to("/"), "Todo was deleted."))
+        JSON("Todo was deleted.")
     } else {
-        Err(JSON(&Context::err(&conn, "Couldn't delete task.")))
+        JSON("Couldn't delete task.")
     }
 }
 
-#[get("/")]
-fn index(msg: Option<FlashMessage>, conn: db::Conn) -> JSON {
-    &match msg {
-        Some(ref msg) => JSON(Context::raw(&conn, Some((msg.name(), msg.msg())))),
-        None => JSON(Context::raw(&conn, None)),
-    }
+#[get("/todos/<id>")]
+fn get(id: i32, conn: db::Conn) -> JSON<Option<Task>> {
+    JSON(Task::get(id, &conn))
+}
+
+#[get("/todos")]
+fn list(conn: db::Conn) -> JSON<Vec<Task>> {
+    JSON(Task::all(&conn))
 }
 
 
 fn main() {
     dotenv().ok();
+
     rocket::ignite()
         .manage(db::init_pool())
-        .mount("/", routes![index, static_files::all])
-        .mount("/todo/", routes![new, toggle, delete])
-        .lounch();
+        .mount("/api/", routes![new, toggle, delete, get, list])
+        .launch();
 }
