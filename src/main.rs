@@ -16,16 +16,12 @@ extern crate diesel_codegen;
 #[macro_use]
 extern crate serde_derive;
 
-
-
-
 mod task;
 mod db;
 
 use rocket::response::{Flash, Redirect};
 use rocket_contrib::JSON;
 use dotenv::dotenv;
-
 
 use task::Task;
 

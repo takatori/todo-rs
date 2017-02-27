@@ -1,10 +1,7 @@
 use std::ops::Deref;
-
 use r2d2;
 use diesel::sqlite::SqliteConnection;
 use r2d2_diesel::ConnectionManager;
-
-
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Request, State, Outcome};
